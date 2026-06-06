@@ -62,7 +62,7 @@ export default async function DashboardPage() {
                             </div>
                             <h2 className="text-xl font-bold mb-2 text-white">Fast Integration</h2>
                             <p className="text-white/80 text-sm leading-relaxed">
-                                Use our simple POST API to generate thumbnails in milliseconds and store them in Cloudinary.
+                                Use our simple POST API to generate thumbnails in milliseconds and store them in Cloudflare R2.
                             </p>
                         </div>
                         <div className="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/60">

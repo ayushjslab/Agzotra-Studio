@@ -2,8 +2,12 @@
 
 import { useEffect, useState, ComponentType } from "react";
 
+type HeroProps = {
+  name: string;
+};
+
 export default function Page() {
-    const [RemoteHero, setRemoteHero] = useState<ComponentType | null>(null);
+    const [RemoteHero, setRemoteHero] = useState<ComponentType<HeroProps>  | null>(null);
     const [error, setError] = useState<string | null>(null);
     async function getCommitHash() {
         const res = await fetch(
