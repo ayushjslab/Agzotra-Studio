@@ -8,7 +8,7 @@ export default function Hero({ name }: HeroProps) {
       <div className="container mx-auto px-6">
         <div className="mx-auto max-w-3xl text-center">
           <span className="rounded-full border px-4 py-1 text-sm font-medium">
-            🚀 New Release
+            🚀 New Release v 2.1.1
           </span>
 
           <h1 className="mt-6 text-5xl font-bold tracking-tight md:text-7xl">

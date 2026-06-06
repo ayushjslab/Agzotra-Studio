@@ -5,12 +5,20 @@ import { useEffect, useState, ComponentType } from "react";
 export default function Page() {
     const [RemoteHero, setRemoteHero] = useState<ComponentType | null>(null);
     const [error, setError] = useState<string | null>(null);
+    async function getCommitHash() {
+        const res = await fetch(
+            "https://api.github.com/repos/ayushjslab/Agzotra-Studio/commits/main"
+        );
 
+        const data = await res.json();
+
+        return data.sha.substring(0, 7);
+    }
     useEffect(() => {
         const loadRemoteComponent = async () => {
             try {
                 // Using the latest commit hash (2cb4ca2) to bypass jsDeliv CDN caching
-                const commitHash = "2cb4ca2";
+                const commitHash = await getCommitHash();
                 const url = `https://cdn.jsdelivr.net/gh/ayushjslab/Agzotra-Studio@${commitHash}/dist/Hero.js`;
 
                 const mod = await Function(`return import("${url}")`)();
