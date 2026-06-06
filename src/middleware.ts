@@ -1,7 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
+// Consolidated logic into middleware function below
+
+export async function middleware(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
         request,
     })
@@ -27,14 +29,25 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
-    // refreshing the auth token
-    await supabase.auth.getUser()
+    // IMPORTANT: Avoid using getUser() in middleware if you can, 
+    // but for simple route protection it is the most reliable way.
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // 1. If user is NOT logged in and trying to access a protected route (dashboard)
+    if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        return NextResponse.redirect(url)
+    }
+
+    // 2. If user IS logged in and trying to access the login page
+    if (user && request.nextUrl.pathname.startsWith('/login')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/'
+        return NextResponse.redirect(url)
+    }
 
     return supabaseResponse
-}
-
-export async function middleware(request: NextRequest) {
-    return await updateSession(request)
 }
 
 export const config = {
