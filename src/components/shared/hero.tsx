@@ -1,3 +1,3 @@
-export default function Hero() {
-  return <h1>Hello World</h1>;
+export default function Hero({ name }: { name: string }) {
+  return <h1>Hello {name}</h1>;
 }

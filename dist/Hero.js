@@ -1,1 +1,1 @@
-import{jsx as l}from"react/jsx-runtime";function o(){return l("h1",{children:"Hello World"})}export{o as default};
+import{jsxs as o}from"react/jsx-runtime";function n({name:e}){return o("h1",{children:["Hello ",e]})}export{n as default};
