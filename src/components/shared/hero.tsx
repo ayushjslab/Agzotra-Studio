@@ -1,3 +1,5 @@
+import TrainPage from "./train";
+
 type HeroProps = {
   name: string;
 };
@@ -10,6 +12,7 @@ export default function Hero({ name }: HeroProps) {
           <span className="rounded-full border px-4 py-1 text-sm font-medium">
             🚀 New Release v 2.1.1
           </span>
+          <TrainPage />
 
           <h1 className="mt-6 text-5xl font-bold tracking-tight md:text-7xl">
             Hello, {name}
