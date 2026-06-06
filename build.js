@@ -1,9 +1,11 @@
 const esbuild = require("esbuild");
 
 esbuild.build({
-    entryPoints: ["src/app/(app)/(auth)/auth-code-error/page.tsx"],
-    outfile: "dist/page.js",
-    bundle: true,
-    format: "esm",
-    platform: "browser",
-}).catch(() => process.exit(1));
+  entryPoints: ["src/components/shared/hero.tsx"],
+  outfile: "dist/Hero.js",
+  bundle: true,
+  format: "esm",
+  platform: "browser",
+  external: ["react", "react-dom"],
+  minify: true,
+});
