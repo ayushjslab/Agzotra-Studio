@@ -67,20 +67,20 @@ export default function Page() {
   };
 
   return (
-    <div className="p-10 max-w-5xl mx-auto">
+    <div className="p-10 max-w-5xl mx-auto bg-background text-foreground">
       <div className="flex flex-col gap-6 mb-8">
         <div className="flex items-center gap-4">
           <button
             onClick={handleGenerateAndUpload}
             disabled={loading}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 flex items-center gap-2"
+            className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 flex items-center gap-2"
           >
             {loading ? "Processing..." : "Generate & Save to Cloudflare R2"}
           </button>
 
           <button
             onClick={downloadImage}
-            className="px-6 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-semibold rounded-xl transition-all shadow-lg"
+            className="px-6 py-3 bg-muted hover:bg-muted/80 text-foreground font-semibold rounded-xl transition-all shadow-lg border border-border"
           >
             Local Download
           </button>
@@ -88,21 +88,21 @@ export default function Page() {
 
         {/* R2 Result Area */}
         {imageUrl && (
-          <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-500">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+              <div className="p-2 bg-primary/20 text-primary rounded-lg">
                 <Link className="w-5 h-5" />
               </div>
               <div className="flex flex-col overflow-hidden">
-                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Live Cloudflare R2 URL</span>
-                <span className="text-sm text-emerald-600 truncate max-w-md">{imageUrl}</span>
+                <span className="text-xs font-bold text-primary uppercase tracking-wider">Live Cloudflare R2 URL</span>
+                <span className="text-sm text-primary/80 truncate max-w-md">{imageUrl}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={copyToClipboard}
-                className="p-2 hover:bg-emerald-100 text-emerald-600 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                className="p-2 hover:bg-primary/20 text-primary rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
               >
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 {copied ? "Copied" : "Copy"}
@@ -111,7 +111,7 @@ export default function Page() {
                 href={imageUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 hover:bg-emerald-100 text-emerald-600 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                className="p-2 hover:bg-primary/20 text-primary rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
               >
                 <ExternalLink className="w-4 h-4" />
                 Open
@@ -122,8 +122,8 @@ export default function Page() {
       </div>
 
       {loading && (
-        <div className="mb-8 p-4 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl animate-pulse flex items-center gap-3">
-          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" />
+        <div className="mb-8 p-4 bg-primary/5 border border-primary/10 text-primary rounded-xl animate-pulse flex items-center gap-3">
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
           <span>Generating high-quality image and uploading to Cloudflare R2...</span>
         </div>
       )}
@@ -131,30 +131,30 @@ export default function Page() {
       {/* Editor Simulation (Simple inputs for demo) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="space-y-1">
-          <label className="text-xs font-bold text-neutral-500 uppercase">Title</label>
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Title</label>
           <input
             type="text"
             value={data.title}
             onChange={e => setData({ ...data, title: e.target.value })}
-            className="w-full p-2 border rounded-lg bg-white"
+            className="w-full p-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-neutral-500 uppercase">Subtitle</label>
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Subtitle</label>
           <input
             type="text"
             value={data.subtitle}
             onChange={e => setData({ ...data, subtitle: e.target.value })}
-            className="w-full p-2 border rounded-lg bg-white"
+            className="w-full p-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-neutral-500 uppercase">Tag</label>
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Tag</label>
           <input
             type="text"
             value={data.tag}
             onChange={e => setData({ ...data, tag: e.target.value })}
-            className="w-full p-2 border rounded-lg bg-white"
+            className="w-full p-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all"
           />
         </div>
       </div>
