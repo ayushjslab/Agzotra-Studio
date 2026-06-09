@@ -2,6 +2,16 @@ import React from 'react';
 import { TEMPLATE_REGISTRY } from '@/config/templates';
 import { ArrowUpRight, Sparkles, Layout, MousePointer2 } from 'lucide-react';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
+    const { category } = await params;
+    const categoryData = TEMPLATE_REGISTRY[category];
+    return {
+        title: `${categoryData?.name || 'Category'} Templates | Agzotra Studio`,
+        description: categoryData?.description || 'Browse high-performance dynamic image templates.',
+    };
+}
 
 interface TemplateItemProps {
     component: React.ElementType;

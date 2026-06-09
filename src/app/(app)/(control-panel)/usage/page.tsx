@@ -1,5 +1,11 @@
-import React from 'react'
-import { Activity, Zap, CreditCard } from 'lucide-react'
+import { Metadata } from 'next';
+import React from 'react';
+import { Activity, Zap, CreditCard } from 'lucide-react';
+
+export const metadata: Metadata = {
+    title: 'Usage & Billing | Agzotra Studio',
+    description: 'Track your image generation metrics and subscription status.',
+};
 
 const UsagePage = () => {
     return (

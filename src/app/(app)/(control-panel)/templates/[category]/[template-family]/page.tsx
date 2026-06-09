@@ -1,9 +1,19 @@
 import dynamic from 'next/dynamic';
 import { ArrowUpRight, Sparkles, Layout, MousePointer2 } from 'lucide-react';
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { PATTERN_BG_IMAGES } from '@/bg-images/article/pattern';
 import { CHALK_BG_IMAGES } from '@/bg-images/article/chalk';
 import { BLOCKS_BG_IMAGES } from '@/bg-images/article/Blocks';
+
+export async function generateMetadata({ params }: { params: Promise<{ category: string; 'template-family': string }> }): Promise<Metadata> {
+    const { 'template-family': family } = await params;
+    const displayName = family.charAt(0).toUpperCase() + family.slice(1);
+    return {
+        title: `${displayName} Family Variations | Agzotra Studio`,
+        description: `Explore unique background variations for the ${displayName} template family.`,
+    };
+}
 
 const DynamicPattern = dynamic(() => import('@/templates/Article/Pattern'));
 const DynamicChalk = dynamic(() => import('@/templates/Article/Chalk'));

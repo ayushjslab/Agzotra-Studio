@@ -1,6 +1,12 @@
+import { Metadata } from 'next';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { Key, Layout, Code, Activity, ChevronRight, Zap } from 'lucide-react';
+
+export const metadata: Metadata = {
+    title: 'Dashboard | Agzotra Studio',
+    description: 'Manage your high-performance image generation engine.',
+};
 
 export default async function DashboardPage() {
     const supabase = await createSupabaseServerClient();

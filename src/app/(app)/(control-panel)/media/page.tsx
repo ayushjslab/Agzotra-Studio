@@ -1,5 +1,11 @@
-import React from 'react'
-import { Image as ImageIcon, Sparkles } from 'lucide-react'
+import { Metadata } from 'next';
+import React from 'react';
+import { Image as ImageIcon, Sparkles } from 'lucide-react';
+
+export const metadata: Metadata = {
+    title: 'Media Library | Agzotra Studio',
+    description: 'Browse and manage your generated visual assets.',
+};
 
 const MediaPage = () => {
     return (

@@ -1,9 +1,13 @@
-"use client";
-
 import React from "react";
 import Link from "next/link";
+import { Metadata } from 'next';
 import { ArrowRight, Image as ImageIcon, Sparkles, Layers } from "lucide-react";
 import { CATEGORY } from "@/config/categories";
+
+export const metadata: Metadata = {
+  title: 'Template Library | Agzotra Studio',
+  description: 'Explore our curated collections of high-performance image templates.',
+};
 
 export default function TemplatesPage() {
   return (
