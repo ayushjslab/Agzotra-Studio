@@ -15,22 +15,28 @@ export interface TemplateCategory {
 }
 
 export const TEMPLATE_REGISTRY: Record<string, TemplateCategory> = {
-    'article-templates': {
-        id: 'article-templates',
-        name: 'Article Templates',
+    'article': {
+        id: 'article',
+        name: 'Article',
         description: 'Designed for high conversion and readability.',
         templates: [
             {
                 id: 'pattern',
                 name: 'Pattern',
                 description: 'Ultra-modern bento grid layout with customizable glows and neon accents.',
-                component: dynamic(() => import('@/templates/Article-Templates/Pattern')),
+                component: dynamic(() => import('@/templates/Article/Pattern')),
             },
             {
                 id: 'chalk',
                 name: 'Chalk',
                 description: 'Artisanal hand-drawn feel with chalk textures and sketch aesthetics.',
-                component: dynamic(() => import('@/templates/Article-Templates/Chalk')),
+                component: dynamic(() => import('@/templates/Article/Chalk')),
+            },
+            {
+                id: 'blocks',
+                name: 'Blocks',
+                description: 'Geometric and structured layout with bold block-based visual elements.',
+                component: dynamic(() => import('@/templates/Article/Blocks')),
             },
         ],
     },

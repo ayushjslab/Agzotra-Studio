@@ -1,167 +1,98 @@
 "use client";
 
-import { useRef, useState } from "react";
-import * as htmlToImage from "html-to-image";
-import ThumbnailTemplate, { ThumbnailTemplateProps } from "./thumbnail";
-import { Link, ExternalLink, Copy, Check } from "lucide-react";
+import React from "react";
+import Link from "next/link";
+import { ArrowRight, Image as ImageIcon, Sparkles, Layers } from "lucide-react";
+import { CATEGORY } from "@/config/categories";
 
-export default function Page() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [data, setData] = useState<ThumbnailTemplateProps>({
-    title: "MASTERING REACT IN 2026",
-    subtitle: "Advanced architecture patterns explained simply",
-    tag: "TUTORIAL",
-    layout: "split-left",
-    variant: "cyber",
-    highlightColor: "#3b82f6",
-    showBlurGlow: true,
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  const downloadImage = async () => {
-    if (!ref.current) return;
-    const dataUrl = await htmlToImage.toPng(ref.current, {
-      cacheBust: true,
-      pixelRatio: 2,
-    });
-    const link = document.createElement("a");
-    link.download = "thumbnail.png";
-    link.href = dataUrl;
-    link.click();
-  };
-
-  const handleGenerateAndUpload = async () => {
-    setLoading(true);
-    setImageUrl(null);
-    try {
-      const response = await fetch("/api/image-generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || "Failed to upload to Cloudflare R2");
-      }
-
-      const result = await response.json();
-      setImageUrl(result.url);
-    } catch (error: any) {
-      console.error("Error generating thumbnail:", error);
-      alert(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToClipboard = () => {
-    if (imageUrl) {
-      navigator.clipboard.writeText(imageUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
+export default function TemplatesPage() {
   return (
-    <div className="p-10 max-w-5xl mx-auto bg-background text-foreground">
-      <div className="flex flex-col gap-6 mb-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleGenerateAndUpload}
-            disabled={loading}
-            className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 flex items-center gap-2"
-          >
-            {loading ? "Processing..." : "Generate & Save to Cloudflare R2"}
-          </button>
-
-          <button
-            onClick={downloadImage}
-            className="px-6 py-3 bg-muted hover:bg-muted/80 text-foreground font-semibold rounded-xl transition-all shadow-lg border border-border"
-          >
-            Local Download
-          </button>
+    <div className="max-w-7xl mx-auto space-y-12">
+      {/* Header */}
+      <div className="space-y-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase">
+          <Sparkles className="w-3 h-3" />
+          Template Library
         </div>
+        <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
+          Choose Your <span className="text-primary italic">Vibe.</span>
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+          Select a category to explore professional templates designed for high performance and visual impact.
+        </p>
+      </div>
 
-        {/* R2 Result Area */}
-        {imageUrl && (
-          <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-500">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="p-2 bg-primary/20 text-primary rounded-lg">
-                <Link className="w-5 h-5" />
+      {/* Categories Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+        {CATEGORY.map((item) => (
+          <Link
+            key={item.id}
+            href={`/templates/${item.id}`}
+            className="group relative h-[400px] overflow-hidden rounded-3xl bg-card border border-border/50 transition-all duration-500 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10"
+          >
+            {/* Background Image with Overlay */}
+            <div className="absolute inset-0 z-0 transition-transform duration-700 group-hover:scale-110">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent" />
+            </div>
+
+            {/* Content */}
+            <div className="absolute inset-0 z-10 flex flex-col justify-end p-8 space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-md bg-white/10 backdrop-blur-md text-[10px] font-bold text-white uppercase tracking-wider border border-white/10">
+                    {item.count} Templates
+                  </span>
+                  <div className="flex gap-1">
+                    {item.tags.map(tag => (
+                      <span key={tag} className="px-2 py-0.5 rounded-md bg-primary/20 text-[10px] font-bold text-primary-foreground/90 uppercase tracking-wider">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <h3 className="text-3xl font-black text-white tracking-tight group-hover:text-primary transition-colors">
+                  {item.name}
+                </h3>
+                <p className="text-zinc-300 text-sm max-w-sm line-clamp-2">
+                  {item.description}
+                </p>
               </div>
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">Live Cloudflare R2 URL</span>
-                <span className="text-sm text-primary/80 truncate max-w-md">{imageUrl}</span>
+
+              <div className="pt-4 flex items-center gap-2 text-white font-bold text-sm tracking-tighter uppercase group/btn">
+                Explore Category
+                <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center transition-all group-hover/btn:bg-primary group-hover/btn:translate-x-2">
+                  <ArrowRight className="w-4 h-4" />
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={copyToClipboard}
-                className="p-2 hover:bg-primary/20 text-primary rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? "Copied" : "Copy"}
-              </button>
-              <a
-                href={imageUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 hover:bg-primary/20 text-primary rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Open
-              </a>
+            {/* Decorative Icons */}
+            <div className="absolute top-6 right-6 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 opacity-0 transition-all group-hover:opacity-100 group-hover:rotate-12 translate-y-4 group-hover:translate-y-0 text-white">
+              <ImageIcon className="w-5 h-5" />
             </div>
+          </Link>
+        ))}
+
+        {/* Coming Soon Case */}
+        <div className="group relative h-[400px] overflow-hidden rounded-3xl bg-muted/30 border border-dashed border-border/50 flex flex-items-center justify-center p-12 text-center flex-col space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground transition-all duration-500 group-hover:bg-primary/20 group-hover:text-primary group-hover:rotate-12">
+            <Layers className="w-8 h-8" />
           </div>
-        )}
-      </div>
-
-      {loading && (
-        <div className="mb-8 p-4 bg-primary/5 border border-primary/10 text-primary rounded-xl animate-pulse flex items-center gap-3">
-          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-          <span>Generating high-quality image and uploading to Cloudflare R2...</span>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-foreground">Custom Request?</h3>
+            <p className="text-sm text-muted-foreground max-w-[200px] mx-auto">
+              Need a specific template style for your niche? Let us know.
+            </p>
+          </div>
+          <button className="px-6 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-bold uppercase tracking-wider transition-all hover:bg-primary hover:text-white">
+            Contact Support
+          </button>
         </div>
-      )}
-
-      {/* Editor Simulation (Simple inputs for demo) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Title</label>
-          <input
-            type="text"
-            value={data.title}
-            onChange={e => setData({ ...data, title: e.target.value })}
-            className="w-full p-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Subtitle</label>
-          <input
-            type="text"
-            value={data.subtitle}
-            onChange={e => setData({ ...data, subtitle: e.target.value })}
-            className="w-full p-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Tag</label>
-          <input
-            type="text"
-            value={data.tag}
-            onChange={e => setData({ ...data, tag: e.target.value })}
-            className="w-full p-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all"
-          />
-        </div>
-      </div>
-
-      {/* ONLY THIS AREA WILL BE CAPTURED LOCALLY */}
-      <div className="mt-6 w-full max-w-4xl mx-auto p-4">
-        <ThumbnailTemplate {...data} innerRef={ref} />
       </div>
     </div>
   );

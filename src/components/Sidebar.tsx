@@ -37,6 +37,11 @@ export const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     return (
         <aside
@@ -113,11 +118,11 @@ export const Sidebar = () => {
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-200 group relative"
                 >
-                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                    {!isCollapsed && <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+                    {mounted && (theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />)}
+                    {!isCollapsed && <span className="font-medium">{mounted && (theme === 'dark' ? 'Light Mode' : 'Dark Mode')}</span>}
                     {isCollapsed && (
                         <div className="absolute left-14 bg-popover text-popover-foreground text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 border border-border">
-                            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                            {mounted && (theme === 'dark' ? 'Light Mode' : 'Dark Mode')}
                         </div>
                     )}
                 </button>

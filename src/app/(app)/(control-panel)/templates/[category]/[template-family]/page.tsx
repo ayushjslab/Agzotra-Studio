@@ -1,20 +1,24 @@
 import dynamic from 'next/dynamic';
 import { ArrowUpRight, Sparkles, Layout, MousePointer2 } from 'lucide-react';
 import Link from 'next/link';
-import { PATTERN_BG_IMAGES } from '@/bg-images/article-templates/pattern';
-import { CHALK_BG_IMAGES } from '@/bg-images/article-templates/chalk';
+import { PATTERN_BG_IMAGES } from '@/bg-images/article/pattern';
+import { CHALK_BG_IMAGES } from '@/bg-images/article/chalk';
+import { BLOCKS_BG_IMAGES } from '@/bg-images/article/Blocks';
 
-const DynamicPattern = dynamic(() => import('@/templates/Article-Templates/Pattern'));
-const DynamicChalk = dynamic(() => import('@/templates/Article-Templates/Chalk'));
+const DynamicPattern = dynamic(() => import('@/templates/Article/Pattern'));
+const DynamicChalk = dynamic(() => import('@/templates/Article/Chalk'));
+const DynamicBlocks = dynamic(() => import('@/templates/Article/Blocks'));
 
 const BG_IMAGES_MAP: Record<string, Record<string, string>> = {
     'pattern': PATTERN_BG_IMAGES,
     'chalk': CHALK_BG_IMAGES,
+    'blocks': BLOCKS_BG_IMAGES,
 };
 
 const COMPONENT_MAP: Record<string, React.ComponentType<any>> = {
     'pattern': DynamicPattern,
     'chalk': DynamicChalk,
+    'blocks': DynamicBlocks,
 };
 
 interface TemplateVariationItemProps {
@@ -32,9 +36,9 @@ const TemplateVariationItem = ({
         <div className="group relative flex flex-col gap-4">
             {/* Template Container */}
             <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-border bg-card shadow-2xl transition-all duration-500 group-hover:border-primary/50 group-hover:shadow-primary/10">
-                {/* Scaled Preview Wrapper */}
-                <div className="absolute inset-0 origin-top-left transition-transform duration-700 ease-out group-hover:scale-[1.02]">
-                    <div className="w-[1200px] h-[675px] scale-[0.28] sm:scale-[0.35] md:scale-[0.28] lg:scale-[0.4] xl:scale-[0.5] origin-top-left pointer-events-none">
+                {/* Centered Preview Wrapper */}
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                    <div className="w-[1200px] h-[675px] scale-[0.28] sm:scale-[0.35] md:scale-[0.28] lg:scale-[0.4] xl:scale-[0.45] shrink-0 origin-center pointer-events-none">
                         <Component backgroundImage={backgroundImage} />
                     </div>
                 </div>
