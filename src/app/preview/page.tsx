@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import ThumbnailTemplate from "../(app)/template/thumbnail";
+import ThumbnailTemplate from "../(app)/(control-panel)/templates/thumbnail";
 import { Suspense } from "react";
 
 function PreviewContent() {
