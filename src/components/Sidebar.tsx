@@ -15,7 +15,8 @@ import {
     User,
     Sun,
     Moon,
-    LogOut
+    LogOut,
+    Wand2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
@@ -23,6 +24,7 @@ import { useTheme } from 'next-themes';
 const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Templates', href: '/templates', icon: Library },
+    { name: 'Customization', href: '/customization', icon: Wand2 },
     { name: 'Media', href: '/media', icon: Image },
     { name: 'Usage', href: '/usage', icon: BarChart3 },
 ];
