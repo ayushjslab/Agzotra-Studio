@@ -5,13 +5,18 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
     Type, Palette, Image as ImageIcon, Tag, ArrowLeft,
-    Download, Eye, Wand2, RotateCcw, ChevronDown,
+    Download, Eye, Wand2, RotateCcw,
     Plus, X, Check, Sparkles, AlignLeft, AlignCenter, AlignRight,
     Bold, Italic, Zap, Layers, Monitor
 } from 'lucide-react';
 import Link from 'next/link';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+
+type ContentPosition =
+    | 'top-left' | 'top-center' | 'top-right'
+    | 'center'
+    | 'bottom-left' | 'bottom-center' | 'bottom-right';
 
 interface Badge {
     id: string;
@@ -35,6 +40,7 @@ interface TemplateConfig {
     titleAlign: 'left' | 'center' | 'right';
     titleBold: boolean;
     titleItalic: boolean;
+    contentPosition: ContentPosition;
     badges: Badge[];
     overlayOpacity: number;
     borderRadius: number;
@@ -61,6 +67,7 @@ const DEFAULT_CONFIG: TemplateConfig = {
     titleAlign: 'left',
     titleBold: true,
     titleItalic: false,
+    contentPosition: 'bottom-left',
     badges: [{ id: '1', text: 'Engineering', color: '#a855f7', bg: 'rgba(168,85,247,0.15)' }],
     overlayOpacity: 0.5,
     borderRadius: 16,
@@ -88,11 +95,24 @@ const BADGE_PRESETS = [
     { text: 'Design', color: '#ec4899', bg: 'rgba(236,72,153,0.15)' },
 ];
 
+// ─── Position → CSS classes ───────────────────────────────────────────────────
+
+// Maps position key → [justify (vertical), items (horizontal)]
+const POSITION_STYLES: Record<ContentPosition, { justify: string; items: string; text: string }> = {
+    'top-left': { justify: 'justify-start', items: 'items-start', text: 'text-left' },
+    'top-center': { justify: 'justify-start', items: 'items-center', text: 'text-center' },
+    'top-right': { justify: 'justify-start', items: 'items-end', text: 'text-right' },
+    'center': { justify: 'justify-center', items: 'items-center', text: 'text-center' },
+    'bottom-left': { justify: 'justify-end', items: 'items-start', text: 'text-left' },
+    'bottom-center': { justify: 'justify-end', items: 'items-center', text: 'text-center' },
+    'bottom-right': { justify: 'justify-end', items: 'items-end', text: 'text-right' },
+};
+
 // ─── Utility UI Components ────────────────────────────────────────────────────
 
 function SectionTitle({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
     return (
-        <div className="flex items-center gap-2 mb-4 pt-2">
+        <div className="flex items-center gap-2 mb-3">
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                 <Icon className="w-3.5 h-3.5" />
             </div>
@@ -103,16 +123,14 @@ function SectionTitle({ icon: Icon, label }: { icon: React.ElementType; label: s
     );
 }
 
-function ColorPicker({
-    label, value, onChange,
-}: { label: string; value: string; onChange: (v: string) => void }) {
+function ColorPicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
     return (
         <div className="flex items-center justify-between gap-3">
             <label className="text-sm text-muted-foreground">{label}</label>
             <div className="flex items-center gap-2">
                 <input
                     type="color"
-                    value={value}
+                    value={value.startsWith('#') ? value : '#ffffff'}
                     onChange={(e) => onChange(e.target.value)}
                     className="w-8 h-8 rounded-lg border border-border cursor-pointer bg-transparent overflow-hidden"
                 />
@@ -127,9 +145,7 @@ function ColorPicker({
     );
 }
 
-function SliderInput({
-    label, value, min, max, step = 1, unit = '', onChange,
-}: {
+function SliderInput({ label, value, min, max, step = 1, unit = '', onChange }: {
     label: string; value: number; min: number; max: number;
     step?: number; unit?: string; onChange: (v: number) => void;
 }) {
@@ -141,8 +157,7 @@ function SliderInput({
             </div>
             <input
                 type="range"
-                min={min} max={max} step={step}
-                value={value}
+                min={min} max={max} step={step} value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
                 className="w-full h-1.5 rounded-full accent-primary cursor-pointer"
             />
@@ -150,14 +165,70 @@ function SliderInput({
     );
 }
 
+// ─── 7-Position Grid Picker ───────────────────────────────────────────────────
+
+// Visual 3×3 grid: center-left and center-right omitted → 7 positions
+const POSITION_GRID: (ContentPosition | null)[][] = [
+    ['top-left', 'top-center', 'top-right'],
+    [null, 'center', null],
+    ['bottom-left', 'bottom-center', 'bottom-right'],
+];
+
+const POSITION_LABELS: Record<ContentPosition, string> = {
+    'top-left': 'Top Left',
+    'top-center': 'Top Center',
+    'top-right': 'Top Right',
+    'center': 'Center',
+    'bottom-left': 'Bottom Left',
+    'bottom-center': 'Bottom Center',
+    'bottom-right': 'Bottom Right',
+};
+
+function PositionPicker({
+    value, onChange,
+}: { value: ContentPosition; onChange: (v: ContentPosition) => void }) {
+    return (
+        <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-1.5 p-2 bg-background border border-border rounded-xl">
+                {POSITION_GRID.map((row, rowIdx) =>
+                    row.map((pos, colIdx) => {
+                        if (!pos) {
+                            return (
+                                <div
+                                    key={`empty-${rowIdx}-${colIdx}`}
+                                    className="h-8 rounded-lg bg-muted/20 border border-dashed border-border/40"
+                                />
+                            );
+                        }
+                        const isActive = value === pos;
+                        return (
+                            <button
+                                key={pos}
+                                title={POSITION_LABELS[pos]}
+                                onClick={() => onChange(pos)}
+                                className={`h-8 rounded-lg border transition-all duration-150 flex items-center justify-center ${isActive
+                                        ? 'bg-primary border-primary shadow-[0_0_8px_rgba(var(--primary),0.4)]'
+                                        : 'bg-muted/40 border-border hover:bg-muted hover:border-primary/30'
+                                    }`}
+                            >
+                                <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-primary-foreground' : 'bg-muted-foreground/50'}`} />
+                            </button>
+                        );
+                    })
+                )}
+            </div>
+            <p className="text-[11px] text-muted-foreground text-center font-medium">
+                {POSITION_LABELS[value]}
+            </p>
+        </div>
+    );
+}
+
 // ─── Live Preview Canvas ──────────────────────────────────────────────────────
 
 function TemplatePreview({ config }: { config: TemplateConfig }) {
-    const alignClass = {
-        left: 'text-left items-start',
-        center: 'text-center items-center',
-        right: 'text-right items-end',
-    }[config.titleAlign];
+    const pos = POSITION_STYLES[config.contentPosition];
+    const badgeJustify = pos.text === 'text-center' ? 'justify-center' : pos.text === 'text-right' ? 'justify-end' : 'justify-start';
 
     const bgStyle: React.CSSProperties = config.bgImageUrl
         ? {
@@ -173,85 +244,99 @@ function TemplatePreview({ config }: { config: TemplateConfig }) {
 
     return (
         <div
-            className="w-full aspect-video relative overflow-hidden flex flex-col"
+            className="w-full aspect-video relative overflow-hidden"
             style={{ ...bgStyle, borderRadius: `${config.borderRadius}px` }}
         >
-            {/* Subtle noise overlay */}
-            <div className="absolute inset-0 opacity-[0.02] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNjUiIG51bU9jdGF2ZXM9IjMiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIvPjwvc3ZnPg==')]" />
+            {/* Noise texture */}
+            <div className="absolute inset-0 opacity-[0.025] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZSI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNjUiIG51bU9jdGF2ZXM9IjMiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsdGVyPSJ1cmwoI25vaXNlKSIvPjwvc3ZnPg==')]" />
 
             {/* Accent glow */}
             <div
-                className="absolute top-0 right-0 w-1/2 h-1/2 blur-[80px] rounded-full opacity-20 pointer-events-none"
+                className="absolute top-0 right-0 w-1/2 h-1/2 blur-[80px] rounded-full opacity-25 pointer-events-none"
                 style={{ backgroundColor: config.accentColor }}
             />
 
-            {/* Content */}
-            <div className={`relative z-10 flex flex-col ${alignClass} justify-end h-full p-10`}>
-                {/* Badges */}
-                {config.badges.length > 0 && (
-                    <div className={`flex flex-wrap gap-2 mb-5 ${config.titleAlign === 'center' ? 'justify-center' : config.titleAlign === 'right' ? 'justify-end' : ''}`}>
-                        {config.badges.map((b) => (
-                            <span
-                                key={b.id}
-                                className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border"
-                                style={{ color: b.color, backgroundColor: b.bg, borderColor: `${b.color}40` }}
-                            >
-                                {b.text}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                {/* Title */}
-                <h1
-                    className="text-4xl leading-tight mb-3 max-w-3xl"
-                    style={{
-                        color: config.titleColor,
-                        fontWeight: config.titleBold ? 800 : 500,
-                        fontStyle: config.titleItalic ? 'italic' : 'normal',
-                    }}
-                >
-                    {config.title}
-                </h1>
-
-                {/* Subtitle */}
-                <p
-                    className="text-base leading-relaxed mb-6 max-w-2xl"
-                    style={{ color: config.subtitleColor }}
-                >
-                    {config.subtitle}
-                </p>
-
-                {/* Author / Read time */}
-                {(config.showAuthor || config.showReadTime) && (
-                    <div className="flex items-center gap-4 text-xs" style={{ color: config.subtitleColor }}>
-                        {config.showAuthor && (
-                            <div className="flex items-center gap-2">
-                                <div
-                                    className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold"
-                                    style={{ backgroundColor: config.accentColor, color: '#fff' }}
+            {/* Content block — positioned via flexbox */}
+            <div className={`absolute inset-0 flex flex-col p-10 ${pos.justify} ${pos.items}`}>
+                <div className={`flex flex-col gap-3 max-w-[80%] ${pos.text}`}>
+                    {/* Badges */}
+                    {config.badges.length > 0 && (
+                        <div className={`flex flex-wrap gap-2 ${badgeJustify}`}>
+                            {config.badges.map((b) => (
+                                <span
+                                    key={b.id}
+                                    className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border"
+                                    style={{ color: b.color, backgroundColor: b.bg, borderColor: `${b.color}40` }}
                                 >
-                                    {config.author.charAt(0)}
+                                    {b.text}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Title */}
+                    <h1
+                        className="text-4xl leading-tight"
+                        style={{
+                            color: config.titleColor,
+                            fontWeight: config.titleBold ? 800 : 500,
+                            fontStyle: config.titleItalic ? 'italic' : 'normal',
+                            textAlign: config.titleAlign,
+                        }}
+                    >
+                        {config.title}
+                    </h1>
+
+                    {/* Subtitle */}
+                    <p className="text-base leading-relaxed" style={{ color: config.subtitleColor, textAlign: config.titleAlign }}>
+                        {config.subtitle}
+                    </p>
+
+                    {/* Author / Read time */}
+                    {(config.showAuthor || config.showReadTime) && (
+                        <div className={`flex items-center gap-4 text-xs ${badgeJustify}`} style={{ color: config.subtitleColor }}>
+                            {config.showAuthor && (
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold"
+                                        style={{ backgroundColor: config.accentColor, color: '#fff' }}
+                                    >
+                                        {config.author.charAt(0)}
+                                    </div>
+                                    <span className="font-medium">{config.author}</span>
                                 </div>
-                                <span className="font-medium">{config.author}</span>
-                            </div>
-                        )}
-                        {config.showAuthor && config.showReadTime && (
-                            <span className="opacity-40">•</span>
-                        )}
-                        {config.showReadTime && (
-                            <span className="font-medium">{config.readTime}</span>
-                        )}
-                    </div>
-                )}
+                            )}
+                            {config.showAuthor && config.showReadTime && <span className="opacity-40">•</span>}
+                            {config.showReadTime && <span className="font-medium">{config.readTime}</span>}
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Top-right accent marker */}
-            <div className="absolute top-8 right-8 flex items-center gap-2 z-10">
+            {/* Canvas size label */}
+            <div className="absolute top-5 right-6 flex items-center gap-2 z-10">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.accentColor }} />
                 <span className="text-[10px] font-mono uppercase tracking-widest opacity-40" style={{ color: config.titleColor }}>
                     1200 × 630
                 </span>
+            </div>
+
+            {/* Position indicator dots (subtle overlay) */}
+            <div className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3 p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                {POSITION_GRID.map((row, ri) =>
+                    row.map((pos_item, ci) => (
+                        <div
+                            key={`dot-${ri}-${ci}`}
+                            className={`flex items-center justify-center ${ri === 0 ? 'items-start' : ri === 2 ? 'items-end' : 'items-center'} ${ci === 0 ? 'justify-start' : ci === 2 ? 'justify-end' : 'justify-center'}`}
+                        >
+                            {pos_item && (
+                                <div
+                                    className={`w-1.5 h-1.5 rounded-full transition-all ${config.contentPosition === pos_item ? 'bg-white scale-150 shadow-sm' : 'bg-white/30'}`}
+                                />
+                            )}
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );
@@ -259,22 +344,19 @@ function TemplatePreview({ config }: { config: TemplateConfig }) {
 
 // ─── Badge Manager ────────────────────────────────────────────────────────────
 
-function BadgeManager({
-    badges, onChange,
-}: { badges: Badge[]; onChange: (b: Badge[]) => void }) {
+function BadgeManager({ badges, onChange }: { badges: Badge[]; onChange: (b: Badge[]) => void }) {
     const [newText, setNewText] = useState('');
     const [newColor, setNewColor] = useState('#a855f7');
-    const [newBg, setNewBg] = useState('rgba(168,85,247,0.15)');
 
     const addBadge = () => {
         if (!newText.trim()) return;
-        onChange([...badges, { id: Date.now().toString(), text: newText.trim(), color: newColor, bg: newBg }]);
+        const bg = newColor + '26'; // ~15% opacity
+        onChange([...badges, { id: Date.now().toString(), text: newText.trim(), color: newColor, bg }]);
         setNewText('');
     };
 
     return (
         <div className="space-y-3">
-            {/* Presets */}
             <div className="flex flex-wrap gap-1.5">
                 {BADGE_PRESETS.map((preset) => (
                     <button
@@ -287,8 +369,6 @@ function BadgeManager({
                     </button>
                 ))}
             </div>
-
-            {/* Custom badge input */}
             <div className="flex gap-2">
                 <input
                     value={newText}
@@ -297,15 +377,18 @@ function BadgeManager({
                     placeholder="Custom badge text..."
                     className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
-                <input type="color" value={newColor} onChange={(e) => setNewColor(e.target.value)}
-                    className="w-9 h-9 rounded-lg border border-border cursor-pointer bg-transparent" title="Badge text color" />
-                <button onClick={addBadge}
-                    className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors">
+                <input
+                    type="color" value={newColor} onChange={(e) => setNewColor(e.target.value)}
+                    className="w-9 h-9 rounded-lg border border-border cursor-pointer bg-transparent"
+                    title="Badge color"
+                />
+                <button
+                    onClick={addBadge}
+                    className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors"
+                >
                     <Plus className="w-3.5 h-3.5" />
                 </button>
             </div>
-
-            {/* Active badges */}
             {badges.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                     {badges.map((badge) => (
@@ -329,6 +412,21 @@ function BadgeManager({
     );
 }
 
+// ─── Toggle Switch ────────────────────────────────────────────────────────────
+
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+    return (
+        <button
+            onClick={() => onChange(!value)}
+            className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${value ? 'bg-primary' : 'bg-muted border border-border'}`}
+        >
+            <span
+                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${value ? 'left-5' : 'left-0.5'}`}
+            />
+        </button>
+    );
+}
+
 // ─── Main Editor ──────────────────────────────────────────────────────────────
 
 export default function TemplateCustomizationPage() {
@@ -343,11 +441,7 @@ export default function TemplateCustomizationPage() {
         setConfig((prev) => ({ ...prev, [key]: value }));
     }, []);
 
-    const handleSave = () => {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-    };
-
+    const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
     const handleReset = () => setConfig(DEFAULT_CONFIG);
 
     const panels = [
@@ -359,13 +453,10 @@ export default function TemplateCustomizationPage() {
 
     return (
         <div className="flex flex-col h-full max-h-[calc(100vh-4rem)]">
-            {/* Top Bar */}
+            {/* ── Top Bar ── */}
             <div className="flex items-center justify-between gap-4 mb-6 shrink-0">
                 <div className="flex items-center gap-3">
-                    <Link
-                        href="/customization"
-                        className="p-2 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    >
+                    <Link href="/customization" className="p-2 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                         <ArrowLeft className="w-4 h-4" />
                     </Link>
                     <div>
@@ -377,24 +468,14 @@ export default function TemplateCustomizationPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleReset}
-                        className="p-2 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground transition-colors"
-                        title="Reset to defaults"
-                    >
+                    <button onClick={handleReset} className="p-2 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground transition-colors" title="Reset to defaults">
                         <RotateCcw className="w-4 h-4" />
                     </button>
-                    <button
-                        className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-sm font-semibold text-muted-foreground hover:text-foreground rounded-xl transition-colors"
-                    >
-                        <Eye className="w-4 h-4" />
-                        Preview
+                    <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-sm font-semibold text-muted-foreground hover:text-foreground rounded-xl transition-colors">
+                        <Eye className="w-4 h-4" /> Preview
                     </button>
-                    <button
-                        className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-sm font-semibold text-muted-foreground hover:text-foreground rounded-xl transition-colors"
-                    >
-                        <Download className="w-4 h-4" />
-                        Export
+                    <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-sm font-semibold text-muted-foreground hover:text-foreground rounded-xl transition-colors">
+                        <Download className="w-4 h-4" /> Export
                     </button>
                     <button
                         onClick={handleSave}
@@ -405,12 +486,12 @@ export default function TemplateCustomizationPage() {
                 </div>
             </div>
 
-            {/* Editor Body */}
+            {/* ── Editor Body ── */}
             <div className="flex gap-5 flex-1 overflow-hidden min-h-0">
 
                 {/* LEFT: Controls Panel */}
                 <div className="w-80 shrink-0 flex flex-col overflow-hidden">
-                    {/* Panel Tabs */}
+                    {/* Tab switcher */}
                     <div className="flex gap-1 p-1 bg-card border border-border rounded-2xl mb-4 shrink-0">
                         {panels.map(({ id, label, icon: Icon }) => (
                             <button
@@ -427,12 +508,23 @@ export default function TemplateCustomizationPage() {
                         ))}
                     </div>
 
-                    {/* Scrollable Panel Content */}
-                    <div className="flex-1 overflow-y-auto space-y-5 pr-1 pb-4">
+                    {/* Panel content */}
+                    <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-6">
 
                         {/* ── TEXT PANEL ── */}
                         {activePanel === 'text' && (
-                            <div className="space-y-5">
+                            <div className="space-y-4">
+
+                                {/* Content Position */}
+                                <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                                    <SectionTitle icon={Layers} label="Content Position" />
+                                    <PositionPicker
+                                        value={config.contentPosition}
+                                        onChange={(v) => update('contentPosition', v)}
+                                    />
+                                </div>
+
+                                {/* Title */}
                                 <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
                                     <SectionTitle icon={Type} label="Title" />
                                     <textarea
@@ -442,9 +534,9 @@ export default function TemplateCustomizationPage() {
                                         className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none leading-relaxed"
                                         placeholder="Enter your title..."
                                     />
-                                    {/* Text formatting */}
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-muted-foreground">Align</span>
+                                    {/* Formatting controls */}
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        <span className="text-xs text-muted-foreground mr-1">Align</span>
                                         {(['left', 'center', 'right'] as const).map((a) => {
                                             const icons = { left: AlignLeft, center: AlignCenter, right: AlignRight };
                                             const Icon = icons[a];
@@ -461,13 +553,13 @@ export default function TemplateCustomizationPage() {
                                         <div className="w-px h-4 bg-border mx-1" />
                                         <button
                                             onClick={() => update('titleBold', !config.titleBold)}
-                                            className={`p-2 rounded-lg transition-colors font-bold text-xs ${config.titleBold ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+                                            className={`p-2 rounded-lg transition-colors ${config.titleBold ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
                                         >
                                             <Bold className="w-3.5 h-3.5" />
                                         </button>
                                         <button
                                             onClick={() => update('titleItalic', !config.titleItalic)}
-                                            className={`p-2 rounded-lg transition-colors italic text-xs ${config.titleItalic ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+                                            className={`p-2 rounded-lg transition-colors ${config.titleItalic ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
                                         >
                                             <Italic className="w-3.5 h-3.5" />
                                         </button>
@@ -475,6 +567,7 @@ export default function TemplateCustomizationPage() {
                                     <ColorPicker label="Title color" value={config.titleColor} onChange={(v) => update('titleColor', v)} />
                                 </div>
 
+                                {/* Subtitle */}
                                 <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
                                     <SectionTitle icon={AlignLeft} label="Subtitle" />
                                     <textarea
@@ -487,16 +580,12 @@ export default function TemplateCustomizationPage() {
                                     <ColorPicker label="Subtitle color" value={config.subtitleColor} onChange={(v) => update('subtitleColor', v)} />
                                 </div>
 
-                                <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+                                {/* Author & Meta */}
+                                <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
                                     <SectionTitle icon={Zap} label="Author & Meta" />
                                     <div className="flex items-center justify-between">
                                         <label className="text-sm text-muted-foreground">Show Author</label>
-                                        <button
-                                            onClick={() => update('showAuthor', !config.showAuthor)}
-                                            className={`relative w-10 h-5 rounded-full transition-colors ${config.showAuthor ? 'bg-primary' : 'bg-muted border border-border'}`}
-                                        >
-                                            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${config.showAuthor ? 'left-5' : 'left-0.5'}`} />
-                                        </button>
+                                        <Toggle value={config.showAuthor} onChange={(v) => update('showAuthor', v)} />
                                     </div>
                                     {config.showAuthor && (
                                         <input
@@ -508,12 +597,7 @@ export default function TemplateCustomizationPage() {
                                     )}
                                     <div className="flex items-center justify-between">
                                         <label className="text-sm text-muted-foreground">Show Read Time</label>
-                                        <button
-                                            onClick={() => update('showReadTime', !config.showReadTime)}
-                                            className={`relative w-10 h-5 rounded-full transition-colors ${config.showReadTime ? 'bg-primary' : 'bg-muted border border-border'}`}
-                                        >
-                                            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${config.showReadTime ? 'left-5' : 'left-0.5'}`} />
-                                        </button>
+                                        <Toggle value={config.showReadTime} onChange={(v) => update('showReadTime', v)} />
                                     </div>
                                     {config.showReadTime && (
                                         <input
@@ -535,7 +619,7 @@ export default function TemplateCustomizationPage() {
                                     <ColorPicker label="Accent" value={config.accentColor} onChange={(v) => update('accentColor', v)} />
                                 </div>
 
-                                <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+                                <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
                                     <SectionTitle icon={Layers} label="Layout Style" />
                                     <div className="grid grid-cols-2 gap-2">
                                         {(['minimal', 'bento', 'split', 'centered'] as const).map((style) => (
@@ -554,19 +638,9 @@ export default function TemplateCustomizationPage() {
                                 </div>
 
                                 <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
-                                    <SectionTitle icon={Monitor} label="Shape & Size" />
-                                    <SliderInput
-                                        label="Border Radius"
-                                        value={config.borderRadius}
-                                        min={0} max={32} step={2} unit="px"
-                                        onChange={(v) => update('borderRadius', v)}
-                                    />
-                                    <SliderInput
-                                        label="Overlay Opacity"
-                                        value={Math.round(config.overlayOpacity * 100)}
-                                        min={0} max={100} unit="%"
-                                        onChange={(v) => update('overlayOpacity', v / 100)}
-                                    />
+                                    <SectionTitle icon={Monitor} label="Shape & Canvas" />
+                                    <SliderInput label="Border Radius" value={config.borderRadius} min={0} max={32} step={2} unit="px" onChange={(v) => update('borderRadius', v)} />
+                                    <SliderInput label="Overlay Opacity" value={Math.round(config.overlayOpacity * 100)} min={0} max={100} unit="%" onChange={(v) => update('overlayOpacity', v / 100)} />
                                 </div>
                             </div>
                         )}
@@ -583,13 +657,12 @@ export default function TemplateCustomizationPage() {
                                         placeholder="https://example.com/bg.jpg"
                                     />
                                     <p className="text-[11px] text-muted-foreground">
-                                        Paste any image URL. The gradient will blend on top.
+                                        Paste any public image URL. The gradient blends on top.
                                     </p>
                                 </div>
 
                                 <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
                                     <SectionTitle icon={Palette} label="Gradient" />
-                                    {/* Presets */}
                                     <div className="grid grid-cols-3 gap-2">
                                         {PRESET_GRADIENTS.map((preset) => (
                                             <button
@@ -605,16 +678,11 @@ export default function TemplateCustomizationPage() {
                                             </button>
                                         ))}
                                     </div>
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 pt-1">
                                         <ColorPicker label="From" value={config.gradientFrom} onChange={(v) => update('gradientFrom', v)} />
                                         <ColorPicker label="To" value={config.gradientTo} onChange={(v) => update('gradientTo', v)} />
                                         <ColorPicker label="Fallback" value={config.bgColor} onChange={(v) => update('bgColor', v)} />
-                                        <SliderInput
-                                            label="Gradient Angle"
-                                            value={config.gradientAngle}
-                                            min={0} max={360} unit="°"
-                                            onChange={(v) => update('gradientAngle', v)}
-                                        />
+                                        <SliderInput label="Gradient Angle" value={config.gradientAngle} min={0} max={360} unit="°" onChange={(v) => update('gradientAngle', v)} />
                                     </div>
                                 </div>
                             </div>
@@ -629,38 +697,37 @@ export default function TemplateCustomizationPage() {
                                 </div>
                             </div>
                         )}
-
                     </div>
                 </div>
 
                 {/* RIGHT: Live Preview */}
                 <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
-                    {/* Preview label */}
                     <div className="flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                             <span>Live Preview — 1200 × 630 px</span>
                         </div>
-                        <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest">16:9 Canvas</span>
+                        <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest">
+                            Position: {POSITION_LABELS[config.contentPosition]}
+                        </span>
                     </div>
 
-                    {/* Canvas */}
+                    {/* Canvas wrapper */}
                     <div className="flex-1 bg-card border border-border rounded-2xl p-4 overflow-hidden flex items-center justify-center min-h-0">
                         <div className="w-full max-w-3xl">
                             <motion.div
-                                key={JSON.stringify(config)}
-                                initial={{ opacity: 0.7 }}
+                                key={`${config.contentPosition}-${config.title.length}`}
+                                initial={{ opacity: 0.75 }}
                                 animate={{ opacity: 1 }}
-                                transition={{ duration: 0.15 }}
+                                transition={{ duration: 0.12 }}
                             >
                                 <TemplatePreview config={config} />
                             </motion.div>
                         </div>
                     </div>
 
-                    {/* Bottom hint */}
                     <div className="shrink-0 flex items-center justify-between text-[11px] text-muted-foreground font-mono px-1">
-                        <span>Edit controls on the left — changes reflect instantly</span>
+                        <span>Changes reflect instantly in the preview</span>
                         <span>Export quality: 1200 × 630 PNG</span>
                     </div>
                 </div>
